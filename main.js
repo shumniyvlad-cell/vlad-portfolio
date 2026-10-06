@@ -13,9 +13,21 @@
     el.innerHTML = el.textContent.trim().split(/\s+/).map((w) => `<span class="w">${w}</span>`).join(" ");
   });
 
+  // одометр: в колонке 0–9 и ещё один 0, чтобы нули прокручивали полный круг
+  $$(".odo").forEach((odo) => {
+    const strip = Array.from({ length: 11 }, (_, i) => `<span>${i % 10}</span>`).join("");
+    odo.innerHTML = [...odo.dataset.value]
+      .map((ch) => (ch === " "
+        ? '<span class="odo-gap"></span>'
+        : `<span class="odo-col"><span class="odo-strip" data-target="${+ch || 10}">${strip}</span></span>`))
+      .join("");
+  });
+  const odoFinal = (el) => (-el.dataset.target / 11) * 100;
+
   // счётчики — без анимации сразу финальное число
   if (!MOTION) {
     $$("[data-count]").forEach((el) => (el.textContent = el.dataset.count));
+    $$(".odo-strip").forEach((el) => (el.style.transform = `translateY(${odoFinal(el)}%)`));
     $(".life-rail").style.overflowX = "auto";
     return;
   }
@@ -108,6 +120,26 @@
     });
   });
   gsap.from(".fact", { y: 60, opacity: 0, stagger: 0.12, duration: 1, ease: "expo.out", scrollTrigger: { trigger: ".facts", start: "top 85%" } });
+
+  /* ---------- запуски: одометр и имена ---------- */
+  gsap.to(".odo-strip", {
+    yPercent: (i, el) => odoFinal(el), duration: 2.8, ease: "power4.out", stagger: 0.07,
+    scrollTrigger: { trigger: ".billions", start: "top 78%" },
+  });
+  gsap.from(".bill-cur", {
+    scale: 0, rotate: -45, duration: 1.1, delay: 1.4, ease: "back.out(2.2)",
+    scrollTrigger: { trigger: ".billions", start: "top 78%" },
+  });
+  $$(".name").forEach((row) => {
+    gsap.fromTo(row.querySelector(".name-title"), { "--fill": "0%" }, {
+      "--fill": "100%", ease: "none",
+      scrollTrigger: { trigger: row, start: "top 88%", end: "top 45%", scrub: 0.6 },
+    });
+    gsap.from(row.querySelectorAll(".name-no, .name-desc"), {
+      opacity: 0, y: 24, duration: 1, stagger: 0.08, ease: "expo.out",
+      scrollTrigger: { trigger: row, start: "top 88%" },
+    });
+  });
 
   /* ---------- заголовки и подписи ---------- */
   $$(".section-title, .eyebrow").forEach((el) => {
